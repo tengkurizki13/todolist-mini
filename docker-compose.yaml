@@ -6,7 +6,7 @@ services:
     restart: always
     environment:
       - MYSQL_ROOT_PASSWORD=123123
-      - MYSQL_DATABASE=todolist
+      - MYSQL_DATABASE=todo
     ports:
       - 3306:3306
     volumes:
@@ -18,7 +18,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      MYSQL_DBNAME: todolist
+      MYSQL_DBNAME: todo
       MYSQL_USER: root
       MYSQL_PASSWORD: 123123
       MYSQL_HOST: db

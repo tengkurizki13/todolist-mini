@@ -13,10 +13,12 @@ app.use(express.urlencoded({ extended: false }));
 
 // routes
 
-// get all todos
+// get all activitiess
 app.get("/activity-groups", async (req, res) => {
   try {
-    const data = await db.find();
+    let field = "activity_id AS id,title,email";
+    let table = "activities";
+    const data = await db.find(table, field);
     res.json({
       status: "Success",
       message: "Success",
@@ -27,19 +29,19 @@ app.get("/activity-groups", async (req, res) => {
   }
 });
 
-// get one todo
-app.get("/activity-groups/:id", async (req, res) => {
+// // get one activity
+app.get("/activity-groups/:activity_id", async (req, res) => {
   try {
-    const { id } = req.params;
-
-    let validateData = await db.findOne(id);
-    if (!validateData) {
-      return res.json({
+    const { activity_id } = req.params;
+    let field = "activity_id AS id,activity_id AS id,title,email";
+    let table = "activities";
+    let data = await db.findOne(table, field, activity_id, "activity_id");
+    if (!data) {
+      return res.status(404).json({
         status: "Not Found",
-        message: `Activity with ID ${id} Not Found`,
+        message: `Activity with ID ${activity_id} Not Found`,
       });
     }
-    const data = await db.findOne(id);
     res.json({
       status: "Success",
       message: "Success",
@@ -50,21 +52,28 @@ app.get("/activity-groups/:id", async (req, res) => {
   }
 });
 
-// create todo
+// create activity
 app.post("/activity-groups", async (req, res) => {
   try {
-    const body = req.body;
+    const { title, email } = req.body;
 
-    if (body.title === "" || !body.title) {
-      return res.json({
+    if (
+      req.body.title === "" ||
+      !req.body.title ||
+      req.body.email === "" ||
+      !req.body.email
+    ) {
+      return res.status(400).json({
         status: "Bad Request",
         message: "title cannot be null",
       });
     }
+    let field = "title,email";
+    let table = "activities";
+    let value = `'${title}', '${email}'`;
+    const data = await db.create(table, field, value, "activity_id");
 
-    const data = await db.create(body);
-
-    res.json({
+    return res.status(201).json({
       status: "Success",
       message: "Success",
       data: data,
@@ -74,20 +83,27 @@ app.post("/activity-groups", async (req, res) => {
   }
 });
 
-// delete todo
-app.delete("/activity-groups/:id", async (req, res) => {
+// // delete activity
+app.delete("/activity-groups/:activity_id", async (req, res) => {
   try {
-    const { id } = req.params;
+    const { activity_id } = req.params;
 
-    let validateData = await db.findOne(id);
-    if (!validateData) {
-      return res.json({
+    let field = "activity_id AS id,title,email";
+    let table = "activities";
+    let validateData = await db.findOne(
+      table,
+      field,
+      activity_id,
+      "activity_id"
+    );
+    if (validateData === undefined) {
+      return res.status(404).json({
         status: "Not Found",
-        message: `Activity with ID ${id} Not Found`,
+        message: `Activity with ID ${activity_id} Not Found`,
       });
     }
 
-    await db.destroy(id);
+    await db.destroy(table, activity_id, "activity_id");
 
     res.json({
       status: "Success",
@@ -99,30 +115,183 @@ app.delete("/activity-groups/:id", async (req, res) => {
   }
 });
 
-// // update todo
-app.put("/activity-groups/:id", async (req, res) => {
+// // update activity
+app.patch("/activity-groups/:activity_id", async (req, res) => {
   try {
-    const { id } = req.params;
-    const body = req.body;
-
-    let validateData = await db.findOne(id);
+    const { activity_id } = req.params;
+    const { title } = req.body;
+    let field = "activity_id AS id,title,email";
+    let table = "activities";
+    let value = `title = '${title}'`;
+    let validateData = await db.findOne(
+      table,
+      field,
+      activity_id,
+      "activity_id"
+    );
     if (!validateData) {
-      return res.json({
+      return res.status(404).json({
         status: "Not Found",
-        message: `Activity with ID ${id} Not Found`,
+        message: `Activity with ID ${activity_id} Not Found`,
       });
     }
 
-    if (body.title === "" || !body.title || body.email === "" || !body.email) {
-      return res.json({
+    if (!req.body.title || req.body.title === "") {
+      return res.status(400).json({
+        status: "Bad Request",
+        message: "title cannot be null",
+      });
+    }
+    const data = await db.update(
+      table,
+      field,
+      activity_id,
+      value,
+      "activity_id"
+    );
+
+    res.status(200).json({
+      status: "Success",
+      message: "Success",
+      data: data,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// =========================================end restfull activity ====================================//
+
+// get all todos without query
+app.get("/todo-items", async (req, res) => {
+  try {
+    const activityGroupId = req.query.activity_group_id;
+    let field = "todo_id AS id,activity_group_id,title,is_active,priority";
+    let table = "todos";
+    const data = await db.find(table, field, activityGroupId);
+    res.json({
+      status: "Success",
+      message: "Success",
+      data: data,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// // get one todo
+app.get("/todo-items/:todo_id", async (req, res) => {
+  try {
+    const { todo_id } = req.params;
+    let field = "todo_id AS id,activity_group_id,title,is_active,priority";
+    let table = "todos";
+    let data = await db.findOne(table, field, todo_id, "todo_id");
+    if (data === undefined) {
+      return res.status(404).json({
+        status: "Not Found",
+        message: `Todo with ID ${todo_id} Not Found`,
+      });
+    }
+
+    res.status(200).json({
+      status: "Success",
+      // message: "Success",
+      data: data,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// create todo
+app.post("/todo-items", async (req, res) => {
+  try {
+    // const body = req.body;
+    const { title, activity_group_id, is_active = true } = req.body;
+
+    if (!req.body.title) {
+      return res.status(400).json({
         status: "Bad Request",
         message: "title cannot be null",
       });
     }
 
-    const data = await db.update(id, body);
+    if (!req.body.activity_group_id) {
+      return res.status(400).json({
+        status: "Bad Request",
+        message: "activity_group_id cannot be null",
+      });
+    }
 
-    res.json({
+    let field = "title,activity_group_id,is_active,priority,status";
+    let table = "todos";
+    let value = `'${title}', ${activity_group_id}, ${is_active},'very-high','ok'`;
+    const data = await db.create(table, field, value, "todo_id");
+    return res.status(201).json({
+      status: "Success",
+      message: "Success",
+      data: data,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// // delete activity
+app.delete("/todo-items/:todo_id", async (req, res) => {
+  try {
+    const { todo_id } = req.params;
+
+    let field = "todo_id AS id,activity_group_id,title,is_active,priority";
+    let table = "todos";
+    let validateData = await db.findOne(table, field, todo_id, "todo_id");
+    if (!validateData) {
+      return res.status(404).json({
+        status: "Not Found",
+        message: `Todo with ID ${todo_id} Not Found`,
+      });
+    }
+
+    await db.destroy(table, todo_id, "todo_id");
+
+    res.status(200).json({
+      status: "Success",
+      message: "Success",
+      data: {},
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// // update todo
+app.patch("/todo-items/:todo_id", async (req, res) => {
+  try {
+    const { todo_id } = req.params;
+    let {
+      title,
+      priority = "very-high",
+      is_active = true,
+      status = "ok",
+    } = req.body;
+    let field = "activity_group_id,title,is_active,priority,status";
+    let table = "todos";
+    let validateData = await db.findOne(table, field, todo_id, "todo_id");
+    if (!validateData) {
+      return res.status(404).json({
+        status: "Not Found",
+        message: `Todo with ID ${todo_id} Not Found`,
+      });
+    }
+
+    if (!title) {
+      title = validateData.title;
+    }
+
+    let value = `title = '${title}',priority = '${priority}',is_active = ${is_active},status = '${status}'`;
+
+    const data = await db.update(table, field, todo_id, value, "todo_id");
+    return res.json({
       status: "Success",
       message: "Success",
       data: data,
