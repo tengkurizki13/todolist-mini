@@ -7,7 +7,7 @@ const db = mysql.createPool({
   database: process.env.MYSQL_DBNAME || "todo",
   password: process.env.MYSQL_PASSWORD || "123123",
   waitForConnections: true,
-  connectionLimit: 200,
+  connectionLimit: 160,
   queueLimit: 0,
 });
 
@@ -56,6 +56,7 @@ const find = async (table, field, filter = "") => {
     }
     const connection = await db.getConnection();
     const [results] = await connection.query(query);
+    connection.release();
     return results;
   } catch (error) {
     console.log(error);
@@ -67,6 +68,7 @@ const findOne = async (table, field, activity_id, conditionalField) => {
     const query = `SELECT ${field},createdAt,updatedAt FROM ${table} WHERE ${conditionalField} = '${activity_id}'`;
     const connection = await db.getConnection();
     const [results] = await connection.query(query);
+    connection.release();
     let data = results[0];
     return data;
   } catch (error) {
@@ -86,6 +88,7 @@ const create = async (table, field, data, conditionalField) => {
       results[0].insertId,
       conditionalField
     );
+    connection.release();
     const idData = {
       id: results[0].insertId,
     };
@@ -118,8 +121,8 @@ const update = async (table, field, id, data, conditionalField) => {
     const query = `UPDATE ${table} SET ${data} WHERE ${conditionalField} = ${id} `;
     const connection = await db.getConnection();
     await connection.query(query);
-    connection.release();
     const result = await findOne(table, field, id, conditionalField);
+    connection.release();
     const idData = {
       id,
     };
